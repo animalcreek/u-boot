@@ -295,7 +295,7 @@
 
 #ifdef CONFIG_MUSB_GADGET
 #define CONFIG_USB_ETHER
-#define CONFIG_USB_ETH_RNDIS
+#define CONFIG_USB_ETH_CDC
 #define CONFIG_USBNET_HOST_ADDR	"de:ad:be:af:00:00"
 
 /* USB TI's IDs */
