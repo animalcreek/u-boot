@@ -52,11 +52,12 @@
 #define DEFAULT_LINUX_BOOT_ENV \
 	"loadaddr=0x82000000\0" \
 	"kernel_addr_r=0x82000000\0" \
-	"fdtaddr=0x88000000\0" \
-	"fdt_addr_r=0x88000000\0" \
-	"rdaddr=0x88080000\0" \
-	"ramdisk_addr_r=0x88080000\0" \
-	"bootm_size=0x10000000\0"
+	"fdtaddr=0x80F80000\0" \
+	"fdt_addr_r=0x84000000\0" \
+	"rdaddr=0x81000000\0" \
+	"ramdisk_addr_r=0x84080000\0" \
+	"bootm_size=0x08000000\0"
+
 
 #define DEFAULT_MMC_TI_ARGS \
 	"mmcdev=0\0" \
