@@ -148,19 +148,46 @@
 		"else " \
 			"setenv console ttyO0,115200n8;" \
 		"fi;\0" \
+	"s2_pressed=24\0" \
+	"s2_unpressed=28\0" \
 	NANDARGS \
 	NETARGS \
 	DFUARGS
 #endif
 
 #define CONFIG_BOOTCOMMAND \
-	"run findfdt; " \
-	"run init_console; " \
-	"run mmcboot;" \
-	"setenv mmcdev 1; " \
-	"setenv bootpart 1:2; " \
-	"run mmcboot;" \
-	"run nandboot;"
+	"if test -z \"${sys_boot_value}\"; then " \
+		"echo WARNING:  empty sys_boot_value, defaulting to s2_unpressed;" \
+		"setenv sys_boot_value ${s2_unpressed};" \
+	"fi;" \
+	"if test ${sys_boot_value} = ${s2_pressed}; then " \
+		"echo Network boot;" \
+		"setenv ethact usb_ether;" \
+		"dhcp;" \
+		"run ramargs;" \
+		"bootm;" \
+	"else " \
+		"if test ${sys_boot_value} != ${s2_unpressed}; then " \
+			"echo WARNING:  unexpected sys_boot_value ${sys_boot_value};" \
+		"fi;" \
+		"echo MMC boot;" \
+		"setenv mmcdev 1;" \
+		"setenv bootpart 1:2;" \
+		"if run loadbootenv; then " \
+			"echo Loaded env from ${bootenvfile};" \
+			"run importbootenv;" \
+		"fi;" \
+		"setenv bootargs console=${console} " \
+			"${optargs} " \
+			"root=${mmcroot} rw " \
+			"rootfstype=${mmcrootfstype};" \
+		"if run loadimage; then " \
+			"run findfdt;" \
+			"if run loadfdt; then " \
+				"bootz ${loadaddr} - ${fdtaddr};" \
+			"fi;" \
+		"fi;" \
+	"fi;"
 
 /* NS16550 Configuration */
 #define CONFIG_SYS_NS16550_COM1		0x44e09000	/* Base EVM has UART0 */
