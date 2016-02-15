@@ -81,8 +81,17 @@ static int __maybe_unused ti_i2c_eeprom_get(int bus_addr, int dev_addr,
 
 	gpi2c_init();
 	rc = ti_i2c_eeprom_init(bus_addr, dev_addr);
-	if (rc)
-		return rc;
+	if (rc) {
+		struct ti_common_eeprom *eep = (struct ti_common_eeprom *)ep;
+
+		puts("I2C EEPROM init failed -- Assuming KV3");
+		memset(ep, 0, sizeof(*ep));
+		strncpy(eep->name, "KV3", TI_EEPROM_HDR_NAME_LEN);
+		strncpy(eep->version, "00C0", TI_EEPROM_HDR_REV_LEN);
+		strncpy(eep->serial, "0000", TI_EEPROM_HDR_SERIAL_LEN);
+		eep->header = TI_EEPROM_HEADER_MAGIC;
+		return 0;
+	}
 
 	/*
 	 * Read the header first then only read the other contents.

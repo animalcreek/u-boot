@@ -140,6 +140,8 @@
 			"setenv fdtfile am335x-evmsk.dtb; fi; " \
 		"if test $board_name = A335_ICE; then " \
 			"setenv fdtfile am335x-icev2.dtb; fi; " \
+		"if test $board_name = KV3; then " \
+			"setenv fdtfile am335x-kv3.dtb; fi; " \
 		"if test $fdtfile = undefined; then " \
 			"echo WARNING: Could not determine device tree to use; fi; \0" \
 	"init_console=" \
