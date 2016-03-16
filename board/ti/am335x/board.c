@@ -94,6 +94,13 @@ static const struct ddr_data ddr3_beagleblack_data = {
 	.datawrsratio0 = MT41K256M16HA125E_PHY_WR_DATA,
 };
 
+static const struct ddr_data ddr3_kv3_data = {
+	.datardsratio0 = MT41K64M16TW107J_RD_DQS,
+	.datawdsratio0 = MT41K64M16TW107J_WR_DQS,
+	.datafwsratio0 = MT41K64M16TW107J_PHY_FIFO_WE,
+	.datawrsratio0 = MT41K64M16TW107J_PHY_WR_DATA,
+};
+
 static const struct ddr_data ddr3_evm_data = {
 	.datardsratio0 = MT41J512M8RH125_RD_DQS,
 	.datawdsratio0 = MT41J512M8RH125_WR_DQS,
@@ -128,6 +135,17 @@ static const struct cmd_control ddr3_beagleblack_cmd_ctrl_data = {
 
 	.cmd2csratio = MT41K256M16HA125E_RATIO,
 	.cmd2iclkout = MT41K256M16HA125E_INVERT_CLKOUT,
+};
+
+static const struct cmd_control ddr3_kv3_cmd_ctrl_data = {
+	.cmd0csratio = MT41K64M16TW107J_RATIO,
+	.cmd0iclkout = MT41K64M16TW107J_INVERT_CLKOUT,
+
+	.cmd1csratio = MT41K64M16TW107J_RATIO,
+	.cmd1iclkout = MT41K64M16TW107J_INVERT_CLKOUT,
+
+	.cmd2csratio = MT41K64M16TW107J_RATIO,
+	.cmd2iclkout = MT41K64M16TW107J_INVERT_CLKOUT,
 };
 
 static const struct cmd_control ddr3_evm_cmd_ctrl_data = {
@@ -171,6 +189,16 @@ static struct emif_regs ddr3_beagleblack_emif_reg_data = {
 	.sdram_tim3 = MT41K256M16HA125E_EMIF_TIM3,
 	.zq_config = MT41K256M16HA125E_ZQ_CFG,
 	.emif_ddr_phy_ctlr_1 = MT41K256M16HA125E_EMIF_READ_LATENCY,
+};
+
+static struct emif_regs ddr3_kv3_emif_reg_data = {
+	.sdram_config = MT41K64M16TW107J_EMIF_SDCFG,
+	.ref_ctrl = MT41K64M16TW107J_EMIF_SDREF,
+	.sdram_tim1 = MT41K64M16TW107J_EMIF_TIM1,
+	.sdram_tim2 = MT41K64M16TW107J_EMIF_TIM2,
+	.sdram_tim3 = MT41K64M16TW107J_EMIF_TIM3,
+	.zq_config = MT41K64M16TW107J_ZQ_CFG,
+	.emif_ddr_phy_ctlr_1 = MT41K64M16TW107J_EMIF_READ_LATENCY,
 };
 
 static struct emif_regs ddr3_evm_emif_reg_data = {
@@ -231,7 +259,7 @@ void am33xx_spl_board_init(void)
 	/* Get the frequency */
 	dpll_mpu_opp100.m = am335x_get_efuse_mpu_max_freq(cdev);
 
-	if (board_is_bone() || board_is_bone_lt()) {
+	if (board_is_bone() || board_is_bone_lt() || board_is_kv3()) {
 		/* BeagleBone PMIC Code */
 		int usb_cur_lim;
 
@@ -372,7 +400,7 @@ const struct dpll_params *get_dpll_ddr_params(void)
 
 	if (board_is_evm_sk())
 		return &dpll_ddr_evm_sk;
-	else if (board_is_bone_lt() || board_is_icev2())
+	else if (board_is_bone_lt() || board_is_icev2() || board_is_kv3())
 		return &dpll_ddr_bone_black;
 	else if (board_is_evm_15_or_later())
 		return &dpll_ddr_evm_sk;
@@ -421,6 +449,14 @@ const struct ctrl_ioregs ioregs_bonelt = {
 	.dt1ioctl		= MT41K256M16HA125E_IOCTRL_VALUE,
 };
 
+const struct ctrl_ioregs ioregs_kv3 = {
+	.cm0ioctl		= MT41K64M16TW107J_IOCTRL_VALUE,
+	.cm1ioctl		= MT41K64M16TW107J_IOCTRL_VALUE,
+	.cm2ioctl		= MT41K64M16TW107J_IOCTRL_VALUE,
+	.dt0ioctl		= MT41K64M16TW107J_IOCTRL_VALUE,
+	.dt1ioctl		= MT41K64M16TW107J_IOCTRL_VALUE,
+};
+
 const struct ctrl_ioregs ioregs_evm15 = {
 	.cm0ioctl		= MT41J512M8RH125_IOCTRL_VALUE,
 	.cm1ioctl		= MT41J512M8RH125_IOCTRL_VALUE,
@@ -464,6 +500,11 @@ void sdram_init(void)
 			   &ddr3_beagleblack_data,
 			   &ddr3_beagleblack_cmd_ctrl_data,
 			   &ddr3_beagleblack_emif_reg_data, 0);
+	else if (board_is_kv3())
+		config_ddr(400, &ioregs_kv3,
+			  &ddr3_kv3_data,
+			  &ddr3_kv3_cmd_ctrl_data,
+			  &ddr3_kv3_emif_reg_data, 0);
 	else if (board_is_evm_15_or_later())
 		config_ddr(303, &ioregs_evm15, &ddr3_evm_data,
 			   &ddr3_evm_cmd_ctrl_data, &ddr3_evm_emif_reg_data, 0);
@@ -664,7 +705,7 @@ int board_eth_init(bd_t *bis)
 	if (read_eeprom() < 0)
 		puts("Could not get board ID.\n");
 
-	if (board_is_bone() || board_is_bone_lt() || board_is_idk()) {
+	if (board_is_bone() || board_is_bone_lt() || board_is_idk() || board_is_kv3()) {
 		writel(MII_MODE_ENABLE, &cdev->miisel);
 		cpsw_slaves[0].phy_if = cpsw_slaves[1].phy_if =
 				PHY_INTERFACE_MODE_MII;

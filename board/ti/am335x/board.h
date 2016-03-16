@@ -18,7 +18,12 @@ static inline int board_is_bone(void)
 
 static inline int board_is_bone_lt(void)
 {
-	return board_ti_is("A335BNLT") || board_ti_is("KV3");
+	return board_ti_is("A335BNLT");
+}
+
+static inline int board_is_kv3(void)
+{
+	return board_ti_is("KV3");
 }
 
 static inline int board_is_evm_sk(void)
