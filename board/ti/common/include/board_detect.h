@@ -98,6 +98,17 @@ struct ti_common_eeprom {
 				OMAP_SRAM_SCRATCH_BOARD_EEPROM_START)
 
 /**
+ * ti_kv3_update_eeprom - update eeprom and cached eeprom data
+ * @name: board name
+ * @rev: board revision
+ * @serial: board serial
+ *
+ * Return: 0 on success or corresponding error on failure.
+ **/
+int __maybe_unused ti_kv3_update_eeprom(
+		const char * name, const char * rev, const char * serial);
+
+/**
  * ti_i2c_eeprom_am_get() - Consolidated eeprom data collection for AM* TI EVMs
  * @bus_addr:	I2C bus address
  * @dev_addr:	I2C slave address

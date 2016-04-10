@@ -32,6 +32,7 @@
 #include <environment.h>
 #include <watchdog.h>
 #include <environment.h>
+#include <command.h>
 #include <board-common/board_detect.h>
 #include "board.h"
 
@@ -47,6 +48,36 @@ DECLARE_GLOBAL_DATA_PTR;
 #define GPIO_PHY_RESET		GPIO_TO_PIN(2, 5)
 
 static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
+
+
+int do_set_kv3_serial(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	if (argc != 2) {
+		printf("Invalid argument(s):  set_kv3_serial <serial-number>\n");
+		return 1;
+	}
+
+	if (strnlen(argv[1], TI_EEPROM_HDR_SERIAL_LEN) == TI_EEPROM_HDR_SERIAL_LEN) {
+		printf("Serial number too long\n");
+		return 1;
+	}
+
+	return ti_kv3_update_eeprom("KV3", "00D1", argv[1]);
+}
+U_BOOT_CMD(set_kv3_serial, 2, 0, do_set_kv3_serial,
+	"set kv3 serial number", "set kv3 serial number");
+
+int do_zero_kv3_serial(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	if (argc != 1) {
+		printf("zero_kv3_serial takes no arguments\n");
+		return 1;
+	}
+
+	return ti_kv3_update_eeprom(NULL, NULL, NULL);
+}
+U_BOOT_CMD(zero_kv3_serial, 1, 1, do_zero_kv3_serial,
+	"zero kv3 serial number", "zero kv3 serial number");
 
 /*
  * Read header information from EEPROM into global structure.

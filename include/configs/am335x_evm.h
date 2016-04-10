@@ -163,11 +163,16 @@
 		"setenv sys_boot_value ${s2_unpressed};" \
 	"fi;" \
 	"if test ${sys_boot_value} = ${s2_pressed}; then " \
-		"echo Network boot;" \
 		"setenv ethact usb_ether;" \
 		"dhcp;" \
 		"run ramargs;" \
-		"bootm;" \
+		"if test $board_rev = 00D1 -a $board_serial = 0000; then " \
+			"echo Board has no serial, use 'set_kv3_serial <serial>' to program;" \
+			"echo Then, run 'bootm' to complete the network boot;" \
+		"else " \
+			"echo Network boot;" \
+			"bootm;" \
+		"fi;" \
 	"else " \
 		"if test ${sys_boot_value} != ${s2_unpressed}; then " \
 			"echo WARNING:  unexpected sys_boot_value ${sys_boot_value};" \
@@ -182,7 +187,8 @@
 		"setenv bootargs console=${console} " \
 			"${optargs} " \
 			"root=${mmcroot} ro " \
-			"rootfstype=${mmcrootfstype};" \
+			"rootfstype=${mmcrootfstype} " \
+			"kv3_serial=${board_serial};" \
 		"if run loadimage; then " \
 			"run findfdt;" \
 			"if run loadfdt; then " \

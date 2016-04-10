@@ -14,6 +14,64 @@
 
 #include "include/board_detect.h"
 
+
+int __maybe_unused ti_kv3_update_eeprom(
+		const char * name, const char * rev, const char * serial)
+{
+	int rc = 0;
+	struct ti_common_eeprom *ep = TI_EEPROM_DATA;
+	struct ti_am_eeprom new_ep;
+	int i;
+	void * p;
+
+	rc = i2c_probe(CONFIG_SYS_I2C_EEPROM_ADDR);
+	if (rc)
+		return rc;
+
+	// New eeproms appear to be all 1's
+	memset(&new_ep, 0xffff, sizeof(new_ep));
+	if (name || rev || serial)
+		new_ep.header = TI_EEPROM_HEADER_MAGIC;
+
+	if (name)
+		memcpy(&new_ep.name, name, TI_EEPROM_HDR_NAME_LEN);
+
+	if (rev)
+		memcpy(&new_ep.version, rev, TI_EEPROM_HDR_REV_LEN);
+
+	if (serial)
+		memcpy(&new_ep.serial, serial, TI_EEPROM_HDR_SERIAL_LEN);
+
+	// Page writes on the 24AA32A are 32 bytes.
+	for (i = 0, p = &new_ep; i < sizeof(new_ep); i += 32, p += 32) {
+		rc = i2c_write(CONFIG_SYS_I2C_EEPROM_ADDR, i, CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
+				p, min((int)(sizeof(new_ep) - i), 32));
+		if (rc)
+			goto done;
+		udelay(5000);	/* 5ms write cycle timing */
+	}
+
+	if (name)
+		strlcpy(ep->name, name, TI_EEPROM_HDR_NAME_LEN + 1);
+	else
+		strlcpy(ep->name, "KV3", TI_EEPROM_HDR_NAME_LEN + 1);
+
+	if (rev)
+		strlcpy(ep->version, rev, TI_EEPROM_HDR_REV_LEN + 1);
+	else
+		strlcpy(ep->version, "00D1", TI_EEPROM_HDR_REV_LEN + 1);
+
+	if (serial)
+		strlcpy(ep->serial, serial, TI_EEPROM_HDR_SERIAL_LEN + 1);
+	else
+		strlcpy(ep->serial, "0000", TI_EEPROM_HDR_SERIAL_LEN + 1);
+
+	set_board_info_env(NULL);
+
+done:
+	return rc;
+}
+
 /**
  * ti_i2c_eeprom_init - Initialize an i2c bus and probe for a device
  * @i2c_bus: i2c bus number to initialize
@@ -82,14 +140,21 @@ static int __maybe_unused ti_i2c_eeprom_get(int bus_addr, int dev_addr,
 	gpi2c_init();
 	rc = ti_i2c_eeprom_init(bus_addr, dev_addr);
 	if (rc) {
-		struct ti_common_eeprom *eep = (struct ti_common_eeprom *)ep;
+		struct ti_am_eeprom *eep = (struct ti_am_eeprom *)ep;
+		char * str;
 
-		puts("I2C EEPROM init failed -- Assuming KV3");
 		memset(ep, 0, sizeof(*ep));
-		strncpy(eep->name, "KV3", TI_EEPROM_HDR_NAME_LEN);
-		strncpy(eep->version, "00C0", TI_EEPROM_HDR_REV_LEN);
-		strncpy(eep->serial, "0000", TI_EEPROM_HDR_SERIAL_LEN);
 		eep->header = TI_EEPROM_HEADER_MAGIC;
+
+		str = "KV3";
+		memcpy(eep->name, str, TI_EEPROM_HDR_NAME_LEN);
+
+		str = "00D0";
+		memcpy(eep->version, str, TI_EEPROM_HDR_REV_LEN);
+
+		str = "0000";
+		memcpy(eep->serial, str, TI_EEPROM_HDR_SERIAL_LEN);
+
 		return 0;
 	}
 
@@ -100,6 +165,26 @@ static int __maybe_unused ti_i2c_eeprom_get(int bus_addr, int dev_addr,
 	rc = i2c_read(dev_addr, 0x0, byte, (uint8_t *)&hdr_read, 4);
 	if (rc)
 		return rc;
+
+	/* Test to see if this is a KV3 that has yet to have the serial programmed */
+	if (hdr_read == 0xFFFFFFFF) {
+		struct ti_am_eeprom *eep = (struct ti_am_eeprom *)ep;
+		char * str;
+
+		memset(ep, 0, sizeof(*ep));
+		eep->header = TI_EEPROM_HEADER_MAGIC;
+
+		str = "KV3";
+		memcpy(eep->name, str, TI_EEPROM_HDR_NAME_LEN);
+
+		str = "00D1";
+		memcpy(eep->version, str, TI_EEPROM_HDR_REV_LEN);
+
+		str = "0000";
+		memcpy(eep->serial, str, TI_EEPROM_HDR_SERIAL_LEN);
+
+		return 0;
+	}
 
 	/* Corrupted data??? */
 	if (hdr_read != header) {
