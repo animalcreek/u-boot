@@ -52,17 +52,25 @@ static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
 
 int do_set_kv3_serial(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
+	int r;
+
 	if (argc != 2) {
 		printf("Invalid argument(s):  set_kv3_serial <serial-number>\n");
 		return 1;
 	}
 
 	if (strnlen(argv[1], TI_EEPROM_HDR_SERIAL_LEN) == TI_EEPROM_HDR_SERIAL_LEN) {
-		printf("Serial number too long\n");
+		printf("Failed to set KV3 serial, serial number too long\n");
 		return 1;
 	}
 
-	return ti_kv3_update_eeprom("KV3", "00D1", argv[1]);
+	r = ti_kv3_update_eeprom("KV3", "00D1", argv[1]);
+	if (r)
+		printf("Failed to set KV3 serial\n");
+	else
+		printf("Set KV3 serial to %s\n", argv[1]);
+
+	return r;
 }
 U_BOOT_CMD(set_kv3_serial, 2, 0, do_set_kv3_serial,
 	"set kv3 serial number", "set kv3 serial number");
