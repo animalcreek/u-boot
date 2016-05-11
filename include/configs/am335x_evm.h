@@ -179,7 +179,6 @@
 		"fi;" \
 		"echo MMC boot;" \
 		"setenv mmcdev 1;" \
-		"setenv bootpart 1:2;" \
 		"if run loadbootenv; then " \
 			"echo Loaded env from ${bootenvfile};" \
 			"run importbootenv;" \
