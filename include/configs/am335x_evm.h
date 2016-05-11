@@ -188,6 +188,7 @@
 			"${optargs} " \
 			"root=${mmcroot} ro " \
 			"rootfstype=${mmcrootfstype} " \
+			"video=U:480x800p-0 " \
 			"kv3_serial=${board_serial};" \
 		"if run loadimage; then " \
 			"run findfdt;" \
