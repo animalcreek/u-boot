@@ -401,8 +401,24 @@ void __maybe_unused set_board_info_env(char *name)
 	else
 		setenv("board_rev", unknown);
 
-	if (ep->serial)
-		setenv("board_serial", ep->serial);
-	else
+	if (ep->serial) {
+		if (!strncmp(ep->serial, "A1", 2)) {
+			char serial_split[TI_EEPROM_HDR_SERIAL_LEN + 5];
+			sprintf(serial_split, "%c%c-%c-%c%c-%c%c%c-%s",
+				ep->serial[0],
+				ep->serial[1],
+				ep->serial[2],
+				ep->serial[3],
+				ep->serial[4],
+				ep->serial[5],
+				ep->serial[6],
+				ep->serial[7],
+				ep->serial + 8);
+			setenv("board_serial", serial_split);
+		} else {
+			setenv("board_serial", ep->serial);
+		}
+	} else {
 		setenv("board_serial", unknown);
+	}
 }

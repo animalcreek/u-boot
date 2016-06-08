@@ -53,24 +53,70 @@ static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
 int do_set_kv3_serial(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int r;
+	char * read;
+	char * write;
+	struct ti_am_eeprom am_ep;
+	char serial[TI_EEPROM_HDR_SERIAL_LEN + 1];
+	char serial_split[TI_EEPROM_HDR_SERIAL_LEN + 5];
 
 	if (argc != 2) {
 		printf("Invalid argument(s):  set_kv3_serial <serial-number>\n");
 		return 1;
 	}
 
-	if (strnlen(argv[1], TI_EEPROM_HDR_SERIAL_LEN + 1) > TI_EEPROM_HDR_SERIAL_LEN) {
-		printf("Failed to set KV3 serial, serial number too long\n");
-		return 1;
+	// Strip dashes
+	read = argv[1];
+	write = serial;
+	int i = 0;
+	while (*read) {
+		if (*read != '-') {
+			*write = *read;
+			write++;
+			i++;
+		}
+		read++;
+
+		if (i > TI_EEPROM_HDR_SERIAL_LEN) {
+			printf("Failed to set KV3 serial, serial number too long\n");
+			return 1;
+		}
+	}
+	*write = '\0';
+
+	r = ti_kv3_update_eeprom("KV3", "00D1", serial);
+	if (r) {
+		printf("Failed to set KV3 serial\n");
+		return r;
 	}
 
-	r = ti_kv3_update_eeprom("KV3", "00D1", argv[1]);
-	if (r)
-		printf("Failed to set KV3 serial\n");
-	else
-		printf("Set KV3 serial to %s\n", argv[1]);
+	/* Read back directly from EEPROM to print confirmation */
+	r = i2c_read(CONFIG_SYS_I2C_EEPROM_ADDR, 0x0, 2, (uint8_t *)&am_ep, sizeof(am_ep));
+	if (r) {
+		printf("Failed to read EEPROM\n");
+		return r;
+	}
 
-	return r;
+	strlcpy(serial, am_ep.serial, TI_EEPROM_HDR_SERIAL_LEN + 1);
+	serial[TI_EEPROM_HDR_SERIAL_LEN] = '\0';
+
+	if (!strncmp(serial, "A1", 2)) {
+		sprintf(serial_split, "%c%c-%c-%c%c-%c%c%c-%s",
+				serial[0],
+				serial[1],
+				serial[2],
+				serial[3],
+				serial[4],
+				serial[5],
+				serial[6],
+				serial[7],
+				serial + 8);
+	} else {
+		sprintf(serial_split, serial);
+	}
+
+	setenv("board_serial", serial_split);
+	printf("Set KV3 serial to %s\n", serial_split);
+	return 0;
 }
 U_BOOT_CMD(set_kv3_serial, 2, 0, do_set_kv3_serial,
 	"set kv3 serial number", "set kv3 serial number");
