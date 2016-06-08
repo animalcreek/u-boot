@@ -59,7 +59,7 @@ int do_set_kv3_serial(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return 1;
 	}
 
-	if (strnlen(argv[1], TI_EEPROM_HDR_SERIAL_LEN) == TI_EEPROM_HDR_SERIAL_LEN) {
+	if (strnlen(argv[1], TI_EEPROM_HDR_SERIAL_LEN + 1) > TI_EEPROM_HDR_SERIAL_LEN) {
 		printf("Failed to set KV3 serial, serial number too long\n");
 		return 1;
 	}
