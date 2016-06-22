@@ -64,6 +64,8 @@ int do_set_kv3_serial(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return 1;
 	}
 
+    memset(serial, 0, TI_EEPROM_HDR_SERIAL_LEN + 1);
+
 	// Strip dashes
 	read = argv[1];
 	write = serial;
@@ -81,7 +83,6 @@ int do_set_kv3_serial(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			return 1;
 		}
 	}
-	*write = '\0';
 
 	r = ti_kv3_update_eeprom("KV3", "00D1", serial);
 	if (r) {
