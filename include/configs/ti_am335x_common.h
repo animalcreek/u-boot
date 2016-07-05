@@ -19,6 +19,13 @@
 #define CONFIG_SYS_TIMERBASE		0x48040000	/* Use Timer2 */
 #define CONFIG_SPL_AM33XX_ENABLE_RTC32K_OSC
 
+#define CONFIG_AUTOBOOT_KEYED
+#define CONFIG_BOOT_RETRY_TIME 30
+#define CONFIG_RESET_TO_RETRY
+#define CONFIG_AUTOBOOT_DELAY_STR "  "
+#define CONFIG_AUTOBOOT_STOP_STR "stop"
+#define CONFIG_AUTOBOOT_PROMPT "Press <SPACE><SPACE>, or type 'stop' to abort autoboot in %d seconds\n"
+
 #ifndef CONFIG_SPL_BUILD
 # define CONFIG_OMAP_SERIAL
 #endif
