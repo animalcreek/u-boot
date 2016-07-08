@@ -166,13 +166,8 @@
 		"setenv ethact usb_ether;" \
 		"dhcp;" \
 		"run ramargs;" \
-		"if test $board_rev = 00D1 -a $board_serial = 0000; then " \
-			"echo Board has no serial, use 'set_kv3_serial <serial>' to program;" \
-			"echo Then, run 'bootm' to complete the network boot;" \
-		"else " \
-			"echo Network boot;" \
-			"bootm;" \
-		"fi;" \
+		"echo Network boot;" \
+		"bootm;" \
 	"else " \
 		"if test ${sys_boot_value} != ${s2_unpressed}; then " \
 			"echo WARNING:  unexpected sys_boot_value ${sys_boot_value};" \
