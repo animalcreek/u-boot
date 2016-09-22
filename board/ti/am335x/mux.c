@@ -130,6 +130,19 @@ static struct module_pin_mux spi0_pin_mux[] = {
 	{-1},
 };
 
+static struct module_pin_mux spi1_pin_mux[] = {
+	{OFFSET(mcasp0_aclkx), (MODE(3) | RXACTIVE | PULLUDDIS)},/* SPI1_SCLK */
+	{OFFSET(mcasp0_fsx), (MODE(3) | RXACTIVE | PULLUDDIS)},	/* SPI1_D0 */
+	{OFFSET(mcasp0_axr0), (MODE(3) | RXACTIVE | PULLUDDIS)},/* SPI1_D1 */
+	{OFFSET(mcasp0_ahclkr), (MODE(3) | RXACTIVE | PULLUDDIS)},/* SPI1_CS0 */
+	/* Make sure the other SPI1 device is held in reset */
+	{OFFSET(gpmc_oen_ren), (MODE(7) | RXACTIVE |
+		PULLUDEN | PULLUP_EN)}, /* RFID_EN */
+	{OFFSET(gpmc_wen), (MODE(7) | RXACTIVE |
+		PULLUDEN | PULLUP_EN)}, /* RFID_SS */
+	{-1},
+};
+
 static struct module_pin_mux gpio0_7_pin_mux[] = {
 	{OFFSET(ecap0_in_pwm0_out), (MODE(7) | PULLUDEN)},	/* GPIO0_7 */
 	{-1},
@@ -262,6 +275,39 @@ static struct module_pin_mux uart3_icev2_pin_mux[] = {
 	{-1},
 };
 
+static struct module_pin_mux lcd_pin_mux[] = {
+	{OFFSET(lcd_vsync), (MODE(0) | PULLUDDIS)},		/* LCD_VSYNC */
+	{OFFSET(lcd_hsync), (MODE(0) | PULLUDDIS)},		/* LCD_HSYNC */
+	{OFFSET(lcd_pclk),  (MODE(0) | PULLUDDIS)},		/* LCD_PCLK  */
+	{OFFSET(lcd_ac_bias_en),(MODE(0)|PULLUDDIS)},		/* LCD_AC_BIAS*/
+	{OFFSET(lcd_data0), (MODE(0) | PULLUDDIS)},		/* LCD_DATA0 */
+	{OFFSET(lcd_data1), (MODE(0) | PULLUDDIS)},		/* LCD_DATA1 */
+	{OFFSET(lcd_data2), (MODE(0) | PULLUDDIS)},		/* LCD_DATA2 */
+	{OFFSET(lcd_data3), (MODE(0) | PULLUDDIS)},		/* LCD_DATA3 */
+	{OFFSET(lcd_data4), (MODE(0) | PULLUDDIS)},		/* LCD_DATA4 */
+	{OFFSET(lcd_data5), (MODE(0) | PULLUDDIS)},		/* LCD_DATA5 */
+	{OFFSET(lcd_data6), (MODE(0) | PULLUDDIS)},		/* LCD_DATA6 */
+	{OFFSET(lcd_data7), (MODE(0) | PULLUDDIS)},		/* LCD_DATA7 */
+	{OFFSET(lcd_data8), (MODE(0) | PULLUDDIS)},		/* LCD_DATA8 */
+	{OFFSET(lcd_data9), (MODE(0) | PULLUDDIS)},		/* LCD_DATA9 */
+	{OFFSET(lcd_data10),(MODE(0) | PULLUDDIS)},		/* LCD_DATA10*/
+	{OFFSET(lcd_data11),(MODE(0) | PULLUDDIS)},		/* LCD_DATA11*/
+	{OFFSET(lcd_data12),(MODE(0) | PULLUDDIS)},		/* LCD_DATA12*/
+	{OFFSET(lcd_data13),(MODE(0) | PULLUDDIS)},		/* LCD_DATA13*/
+	{OFFSET(lcd_data14),(MODE(0) | PULLUDDIS)},		/* LCD_DATA14*/
+	{OFFSET(lcd_data15),(MODE(0) | PULLUDDIS)},		/* LCD_DATA15*/
+	{OFFSET(gpmc_ad15), (MODE(1) | PULLUDDIS)},		/* LCD_DATA16*/
+	{OFFSET(gpmc_ad14), (MODE(1) | PULLUDDIS)},		/* LCD_DATA17*/
+	{OFFSET(gpmc_ad13), (MODE(1) | PULLUDDIS)},		/* LCD_DATA18*/
+	{OFFSET(gpmc_ad12), (MODE(1) | PULLUDDIS)},		/* LCD_DATA19*/
+	{OFFSET(gpmc_ad11), (MODE(1) | PULLUDDIS)},		/* LCD_DATA20*/
+	{OFFSET(gpmc_ad10), (MODE(1) | PULLUDDIS)},		/* LCD_DATA21*/
+	{OFFSET(gpmc_ad9),  (MODE(1) | PULLUDDIS)},		/* LCD_DATA22*/
+	{OFFSET(gpmc_ad8),  (MODE(1) | PULLUDDIS)},		/* LCD_DATA23*/
+	{OFFSET(gpmc_a5),   (MODE(7) | PULLUDDIS)},		/* LCD RESET */
+	{-1},
+};
+
 #if defined(CONFIG_NOR_BOOT)
 void enable_norboot_pin_mux(void)
 {
@@ -383,7 +429,12 @@ void enable_board_pin_mux(void)
 	} else if (board_is_bone_lt() || board_is_kv3()) {
 		/* Beaglebone LT pinmux */
 		configure_module_pin_mux(i2c1_pin_mux);
-		configure_module_pin_mux(mii1_pin_mux);
+		if (board_is_kv3()) {
+			configure_module_pin_mux(lcd_pin_mux);
+			configure_module_pin_mux(spi1_pin_mux);
+		} else {
+			configure_module_pin_mux(mii1_pin_mux);
+		}
 		configure_module_pin_mux(mmc0_pin_mux);
 #if defined(CONFIG_NAND) && defined(CONFIG_EMMC_BOOT)
 		configure_module_pin_mux(nand_pin_mux);
