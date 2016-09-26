@@ -53,6 +53,7 @@
 #define LCD_HFPMSB(x)				((((x)-1) & 0x300) >> 8)
 #define LCD_INVMASK(x)				((x) & 0x3F00000)
 /* LCD Raster Ctrl Register */
+#define LCD_STN565_MODE				(1 << 24)
 #define LCD_TFT_24BPP_MODE			(1 << 25)
 #define LCD_TFT_24BPP_UNPACK			(1 << 26)
 #define LCD_PALMODE_RAWDATA			(0x10 << 20)
@@ -157,8 +158,9 @@ int am335xfb_init(struct am335x_lcdpanel *panel)
 				LCD_HBPMSB(panel->hbp) |
 				LCD_HFPMSB(panel->hfp) |
 				0x0000FF00;	/* clk cycles for ac-bias */
-	lcdhw->raster_ctrl =	LCD_TFT_24BPP_MODE |
-				LCD_TFT_24BPP_UNPACK |
+	lcdhw->raster_ctrl =	/*LCD_TFT_24BPP_MODE |*/
+				/*LCD_TFT_24BPP_UNPACK |*/
+				LCD_STN565_MODE |
 				LCD_PALMODE_RAWDATA |
 				LCD_TFT_MODE |
 				LCD_RASTER_ENABLE;

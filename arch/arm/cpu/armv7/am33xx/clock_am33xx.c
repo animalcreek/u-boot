@@ -146,11 +146,13 @@ void enable_basic_clocks(void)
 		&cmper->gpio3clkctrl,
 		&cmper->i2c1clkctrl,
 		&cmper->cpgmac0clkctrl,
-		&cmper->spi0clkctrl,
+		&cmper->spi1clkctrl,
 		&cmrtc->rtcclkctrl,
 		&cmper->usb0clkctrl,
 		&cmper->emiffwclkctrl,
 		&cmper->emifclkctrl,
+		&cmper->lcdclkctrl,
+		&cmper->lcdcclkstctrl,
 		0
 	};
 

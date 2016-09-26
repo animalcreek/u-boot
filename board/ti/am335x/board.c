@@ -25,6 +25,7 @@
 #include <asm/emif.h>
 #include <asm/gpio.h>
 #include <i2c.h>
+#include <spi.h>
 #include <miiphy.h>
 #include <cpsw.h>
 #include <power/tps65217.h>
@@ -34,6 +35,8 @@
 #include <environment.h>
 #include <command.h>
 #include <board-common/board_detect.h>
+#include <lcd.h>
+#include "../../../drivers/video/am335x-fb.h"
 #include "board.h"
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -46,6 +49,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define GPIO_MUX_MII_CTRL	GPIO_TO_PIN(3, 10)
 #define GPIO_FET_SWITCH_CTRL	GPIO_TO_PIN(0, 7)
 #define GPIO_PHY_RESET		GPIO_TO_PIN(2, 5)
+#define GPIO_LCD_RESET		GPIO_TO_PIN(1, 21)
 
 static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
 
@@ -848,5 +852,380 @@ int board_eth_init(bd_t *bis)
 		n += rv;
 #endif
 	return n;
+}
+#endif
+
+#ifndef CONFIG_SPL_BUILD
+#define CMD 0x00
+#define DAT 0x01
+
+static const struct {
+    uint8_t type;
+        uint8_t cmd_or_data;
+    uint16_t delay;
+} cordial_init_seq[] = {
+    {CMD, 0xFF, 0},
+        {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x00, 0},
+    {CMD, 0xFF, 0},
+        {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x01, 0},
+    {CMD, 0x08, 0},
+        {DAT, 0x10, 0},
+    {CMD, 0x21, 0},
+        {DAT, 0x03, 0},
+    {CMD, 0x30, 0},
+        {DAT, 0x02, 0},
+    {CMD, 0x31, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x60, 0},
+        {DAT, 0x07, 0},
+    {CMD, 0x61, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0x62, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0x63, 0},
+        {DAT, 0x04, 0},
+    {CMD, 0x40, 0},
+        {DAT, 0x14, 0},
+    {CMD, 0x41, 0},
+        {DAT, 0x55, 0},
+    {CMD, 0x42, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x43, 0},
+        {DAT, 0x09, 0},
+    {CMD, 0x44, 0},
+        {DAT, 0x0C, 0},
+    {CMD, 0x45, 0},
+        {DAT, 0x14, 0},
+    {CMD, 0x50, 0},
+        {DAT, 0x50, 0},
+    {CMD, 0x51, 0},
+        {DAT, 0x50, 0},
+    {CMD, 0x52, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x53, 0},
+        {DAT, 0x42, 0},
+    {CMD, 0xA0, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0xA1, 0},
+        {DAT, 0x09, 0},
+    {CMD, 0xA2, 0},
+        {DAT, 0x0C, 0},
+    {CMD, 0xA3, 0},
+        {DAT, 0x0F, 0},
+    {CMD, 0xA4, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0xA5, 0},
+        {DAT, 0x09, 0},
+    {CMD, 0xA6, 0},
+        {DAT, 0x07, 0},
+    {CMD, 0xA7, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0xA8, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0xA9, 0},
+        {DAT, 0x09, 0},
+    {CMD, 0xAA, 0},
+        {DAT, 0x11, 0},
+    {CMD, 0xAB, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0xAC, 0},
+        {DAT, 0x0E, 0},
+    {CMD, 0xAD, 0},
+        {DAT, 0x19, 0},
+    {CMD, 0xAE, 0},
+        {DAT, 0x0C, 0},
+    {CMD, 0xAF, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0xC0, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0xC1, 0},
+        {DAT, 0x09, 0},
+    {CMD, 0xC2, 0},
+        {DAT, 0x0C, 0},
+    {CMD, 0xC3, 0},
+        {DAT, 0x0F, 0},
+    {CMD, 0xC4, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0xC5, 0},
+        {DAT, 0x09, 0},
+    {CMD, 0xC6, 0},
+        {DAT, 0x07, 0},
+    {CMD, 0xC7, 0},
+        {DAT, 0x16, 0},
+    {CMD, 0xC8, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0xC9, 0},
+        {DAT, 0x09, 0},
+    {CMD, 0xCA, 0},
+        {DAT, 0x11, 0},
+    {CMD, 0xCB, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0xCC, 0},
+        {DAT, 0x0E, 0},
+    {CMD, 0xCD, 0},
+        {DAT, 0x19, 0},
+    {CMD, 0xCE, 0},
+        {DAT, 0x0C, 0},
+    {CMD, 0xCF, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0xFF, 0},
+        {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x07, 0},
+    {CMD, 0x17, 0},
+        {DAT, 0x32, 20},  /* stops here mysteriously*/
+    {CMD, 0x06, 0},
+        {DAT, 0x13, 20},
+    {CMD, 0x02, 0},
+        {DAT, 0x77, 20},
+    {CMD, 0x18, 0},
+        {DAT, 0x1D, 20},
+    {CMD, 0xE1, 0},
+        {DAT, 0x79, 20},
+    {CMD, 0xFF, 0},
+        {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x06, 0},
+    {CMD, 0x00, 0},
+        {DAT, 0xA0, 0},
+    {CMD, 0x01, 0},
+        {DAT, 0x05, 0},
+    {CMD, 0x02, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x03, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x04, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x05, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x06, 0},
+        {DAT, 0x88, 0},
+    {CMD, 0x07, 0},
+        {DAT, 0x04, 0},
+    {CMD, 0x08, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x09, 0},
+        {DAT, 0x90, 0},
+    {CMD, 0x0A, 0},
+        {DAT, 0x04, 0},
+    {CMD, 0x0B, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x0C, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x0D, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x0E, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x0F, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x10, 0},
+        {DAT, 0x55, 0},
+    {CMD, 0x11, 0},
+        {DAT, 0x50, 0},
+    {CMD, 0x12, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x13, 0},
+        {DAT, 0x85, 0},
+    {CMD, 0x14, 0},
+        {DAT, 0x85, 0},
+    {CMD, 0x15, 0},
+        {DAT, 0xC0, 0},
+    {CMD, 0x16, 0},
+        {DAT, 0x0B, 0},
+    {CMD, 0x17, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x18, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x19, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x1A, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x1B, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x1C, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x1D, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x20, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x21, 0},
+        {DAT, 0x23, 0},
+    {CMD, 0x22, 0},
+        {DAT, 0x45, 0},
+    {CMD, 0x23, 0},
+        {DAT, 0x67, 0},
+    {CMD, 0x24, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x25, 0},
+        {DAT, 0x23, 0},
+    {CMD, 0x26, 0},
+        {DAT, 0x45, 0},
+    {CMD, 0x27, 0},
+        {DAT, 0x67, 0},
+    {CMD, 0x30, 0},
+        {DAT, 0x02, 0},
+    {CMD, 0x31, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x32, 0},
+        {DAT, 0x11, 0},
+    {CMD, 0x33, 0},
+        {DAT, 0xAA, 0},
+    {CMD, 0x34, 0},
+        {DAT, 0xBB, 0},
+    {CMD, 0x35, 0},
+        {DAT, 0x66, 0},
+    {CMD, 0x36, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x37, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x38, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x39, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x3A, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x3B, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x3C, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x3D, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x3E, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x3F, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x40, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x52, 0},
+        {DAT, 0x12, 0},
+    {CMD, 0x53, 0},
+        {DAT, 0x12, 0},
+    {CMD, 0xFF, 0},
+        {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x00, 0},
+    {CMD, 0x3A, 0},
+        {DAT, 0x70, 0},
+
+    {CMD, 0x11, 120}, /* Exit Sleep Mode */
+    {CMD, 0x29, 120}, /* Set Display On */
+
+};
+
+vidinfo_t	panel_info = {
+		.vl_col = 480,
+		.vl_row = 800,
+		.vl_bpix = 4,
+		.priv = 0
+};
+
+void lcd_bl_power(int on)
+{
+	/* Set up the TPS WLED backlight */
+	if (tps65217_reg_write(TPS65217_PROT_LEVEL_NONE, TPS65217_WLEDCTRL1,
+				on ? 0x8 : 0, 0xf))
+		puts("bl: tps65217_reg_write failure1\n");
+	if (tps65217_reg_write(TPS65217_PROT_LEVEL_NONE, TPS65217_WLEDCTRL2,
+				on ? 50 : 0, 0x7f))
+		puts("bl: tps65217_reg_write failure2\n");
+}
+
+void lcd_ctrl_init(void *lcdbase)
+{
+	struct am335x_lcdpanel lcd_panel;
+#ifdef CONFIG_USE_FDT
+	/* TODO: is there a better place to load the dtb ? */
+	load_devicetree();
+#endif
+	memset(&lcd_panel, 0, sizeof(struct am335x_lcdpanel));
+
+	lcd_panel.hactive = 480;
+	lcd_panel.vactive = 800;
+	lcd_panel.bpp = 16;
+	lcd_panel.hfp = 5;
+	lcd_panel.hbp = 5;
+	lcd_panel.hsw = 5;
+	lcd_panel.vfp = 5;
+	lcd_panel.vbp = 5;
+	lcd_panel.vsw = 5;
+	lcd_panel.pxl_clk_div = 2; /* Taken from kernel register dump */
+	lcd_panel.pol = 0x2300000; /* Inverse syncs */
+	lcd_panel.pup_delay = 0;
+	lcd_panel.pon_delay = 0;
+
+	panel_info.vl_rot = 0;
+
+	/*lcd_panel.panel_power_ctrl = &lcd_bl_power;*/
+
+	if (0 != am335xfb_init(&lcd_panel))
+		printf("ERROR: failed to initialize video!");
+	/*
+	 * modifiy panel info to 'real' resolution, to operate correct with
+	 * lcd-framework.
+	 */
+	panel_info.vl_col = lcd_panel.hactive;
+	panel_info.vl_row = lcd_panel.vactive;
+
+	lcd_set_flush_dcache(1);
+}
+
+static int spi_send(struct spi_slave *slave, u16 data)
+{
+	int ret;
+
+	ret = spi_xfer(slave, 9, &data, NULL, SPI_XFER_BEGIN | SPI_XFER_END);
+	if (ret)
+		return -EIO;
+
+	return ret;
+}
+
+static int cordial_spi_send(struct spi_slave *slave, uint8_t type,
+			    uint8_t cmd_or_data)
+{
+	int ret = 0;
+	u16 spi_data = (type ? 0x100 : 0) | cmd_or_data;
+	
+	ret = spi_send(slave, spi_data);
+	if (ret)
+		puts("error in spi_write\n");
+
+	return ret;
+}
+
+void lcd_enable(void)
+{
+	struct spi_slave *slave;
+	int i;
+
+	/* Take LCD out of reset */
+	gpio_request(GPIO_LCD_RESET, "lcd_reset");
+	gpio_direction_output(GPIO_LCD_RESET, 0);
+	mdelay(100);
+	gpio_direction_output(GPIO_LCD_RESET, 1);
+
+	/* Get SPI slave for all transfers */
+	slave = spi_setup_slave(CONFIG_DEFAULT_SPI_BUS,
+				CONFIG_DEFAULT_SPI_CHIP,
+				CONFIG_DEFAULT_SPI_RATE,
+				CONFIG_DEFAULT_SPI_MODE);
+	if (!slave) {
+		printf("Invalid device %d:%d\n",
+			CONFIG_DEFAULT_SPI_BUS, CONFIG_DEFAULT_SPI_CHIP);
+		return;
+	}
+
+	spi_set_wordlen(slave, 9);
+
+	if (spi_claim_bus(slave))
+		goto done;
+
+	/* Send Cordial SPI initialization sequence */
+	for (i=0; i<sizeof(cordial_init_seq)/sizeof(cordial_init_seq[0]); i++) {
+		cordial_spi_send(slave, cordial_init_seq[i].type,
+				 cordial_init_seq[i].cmd_or_data);
+		if (cordial_init_seq[i].delay > 0)
+		    mdelay(cordial_init_seq[i].delay);
+	}
+
+	spi_release_bus(slave);
+done:
+	spi_free_slave(slave);
+
+	lcd_bl_power(1);
 }
 #endif

@@ -18,6 +18,20 @@
 
 #include <configs/ti_am335x_common.h>
 
+#define CONFIG_AM335X_LCD
+#define CONFIG_LCD
+#define CONFIG_LCD_LOGO
+#define CONFIG_LCD_NOSTDOUT
+#define CONFIG_SYS_WHITE_ON_BLACK
+#define LCD_BPP				LCD_COLOR16
+
+#define CONFIG_VIDEO_BMP_GZIP
+#define CONFIG_SYS_VIDEO_LOGO_MAX_SIZE	(480*800*4)
+#define CONFIG_CMD_UNZIP
+#define CONFIG_CMD_BMP
+#define CONFIG_BMP_24BMP
+#define CONFIG_BMP_32BPP
+
 #ifndef CONFIG_SPL_BUILD
 #ifndef CONFIG_FIT
 # define CONFIG_FIT
@@ -46,6 +60,7 @@
 #define CONFIG_CMD_GPT
 #define CONFIG_EFI_PARTITION
 
+#undef CONFIG_NAND
 #ifdef CONFIG_NAND
 #define NANDARGS \
 	"mtdids=" MTDIDS_DEFAULT "\0" \
@@ -212,6 +227,7 @@
 #define CONFIG_POWER_TPS65910
 
 /* SPL */
+#undef CONFIG_NOR_BOOT
 #ifndef CONFIG_NOR_BOOT
 #define CONFIG_SPL_POWER_SUPPORT
 #define CONFIG_SPL_YMODEM_SUPPORT
@@ -397,6 +413,15 @@
 	DFU_ALT_INFO_NAND
 #endif
 
+/* McSPI IP block */
+#define CONFIG_SPI
+#define CONFIG_OMAP3_SPI
+#define CONFIG_SPI_CMD
+#define CONFIG_DEFAULT_SPI_MODE SPI_MODE_0
+#define CONFIG_DEFAULT_SPI_BUS 1
+#define CONFIG_DEFAULT_SPI_CHIP 0
+#define CONFIG_DEFAULT_SPI_RATE 500000
+
 /*
  * Default to using SPI for environment, etc.
  * 0x000000 - 0x020000 : SPL (128KiB)
@@ -457,14 +482,13 @@
 #endif
 
 /* SPI flash. */
-#define CONFIG_CMD_SF
-#define CONFIG_SPI_FLASH_WINBOND
-#define CONFIG_SF_DEFAULT_SPEED		24000000
+#undef CONFIG_CMD_SF
+#undef CONFIG_SPI_FLASH_WINBOND
 
 /* Network. */
-#define CONFIG_PHY_GIGE
-#define CONFIG_PHYLIB
-#define CONFIG_PHY_SMSC
+#undef CONFIG_PHY_GIGE
+#undef CONFIG_PHYLIB
+#undef CONFIG_PHY_SMSC
 
 /*
  * NOR Size = 16 MiB
@@ -493,6 +517,7 @@
 #define CONFIG_SYS_MONITOR_BASE		CONFIG_SYS_FLASH_BASE
 #endif  /* NOR support */
 
+#undef CONFIG_DRIVER_TI_CPSW
 #ifdef CONFIG_DRIVER_TI_CPSW
 #define CONFIG_CLOCK_SYNTHESIZER
 #define CLK_SYNTHESIZER_I2C_ADDR 0x65
