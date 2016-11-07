@@ -18,34 +18,49 @@
 int __maybe_unused ti_kv3_update_eeprom(
 		const char * name, const char * rev, const char * serial)
 {
+	struct padded {
+		struct ti_am_eeprom new_ep;
+		uint8_t empty[32];
+	} __attribute__ ((__packed__));
+
 	int rc = 0;
 	struct ti_common_eeprom *ep = TI_EEPROM_DATA;
-	struct ti_am_eeprom new_ep;
 	int i;
-	void * p;
+	struct padded buf;
 
 	rc = i2c_probe(CONFIG_SYS_I2C_EEPROM_ADDR);
 	if (rc)
 		return rc;
 
 	// New eeproms appear to be all 1's
-	memset(&new_ep, 0xffff, sizeof(new_ep));
+	memset(&buf, 0xffff, sizeof(buf));
+
 	if (name || rev || serial)
-		new_ep.header = TI_EEPROM_HEADER_MAGIC;
+		buf.new_ep.header = TI_EEPROM_HEADER_MAGIC;
 
 	if (name)
-		memcpy(&new_ep.name, name, TI_EEPROM_HDR_NAME_LEN);
+		memcpy(&buf.new_ep.name, name, TI_EEPROM_HDR_NAME_LEN);
 
 	if (rev)
-		memcpy(&new_ep.version, rev, TI_EEPROM_HDR_REV_LEN);
+		memcpy(&buf.new_ep.version, rev, TI_EEPROM_HDR_REV_LEN);
 
 	if (serial)
-		memcpy(&new_ep.serial, serial, TI_EEPROM_HDR_SERIAL_LEN);
+		memcpy(&buf.new_ep.serial, serial, TI_EEPROM_HDR_SERIAL_LEN);
 
 	// Page writes on the 24AA32A are 32 bytes.
-	for (i = 0, p = &new_ep; i < sizeof(new_ep); i += 32, p += 32) {
-		rc = i2c_write(CONFIG_SYS_I2C_EEPROM_ADDR, i, CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
-				p, min((int)(sizeof(new_ep) - i), 32));
+
+	// As the serial number has been updated, the rest of the EEPROM also needs
+	// to be wiped out.  Otherwise a board can end up with old UUID's or wyno
+	// settings.
+	for (i = 0; i < 4096; i += 32) {
+		if (i < sizeof(buf.new_ep)) {
+			rc = i2c_write(CONFIG_SYS_I2C_EEPROM_ADDR, i, CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
+					(void *)&buf + i, 32);
+		} else {
+			rc = i2c_write(CONFIG_SYS_I2C_EEPROM_ADDR, i, CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
+					buf.empty, 32);
+		}
+
 		if (rc)
 			goto done;
 		udelay(5000);	/* 5ms write cycle timing */
