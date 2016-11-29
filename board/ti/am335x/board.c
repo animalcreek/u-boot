@@ -866,6 +866,8 @@ static const struct {
 } cordial_init_seq[] = {
     {CMD, 0xFF, 0}, 
         {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x01, 0},
+    {CMD, 0xFF, 0}, 
+        {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x01, 0},
     {CMD, 0x08, 0}, 	//Output   SDA
         {DAT, 0x10, 0},
     {CMD, 0x021, 0},   	//DE = 1 Active
