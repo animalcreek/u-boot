@@ -305,6 +305,8 @@ static struct module_pin_mux lcd_pin_mux[] = {
 	{OFFSET(gpmc_ad9),  (MODE(1) | PULLUDDIS)},		/* LCD_DATA22*/
 	{OFFSET(gpmc_ad8),  (MODE(1) | PULLUDDIS)},		/* LCD_DATA23*/
 	{OFFSET(gpmc_a5),   (MODE(7) | PULLUDDIS)},		/* LCD RESET */
+	{OFFSET(mii1_col),  (MODE(7) | PULLUDDIS | RXACTIVE)},	/* Cordial Rev*/
+	{OFFSET(mii1_crs),  (MODE(7) | PULLUDDIS | RXACTIVE)},	/* Cordial Rev*/
 	{-1},
 };
 

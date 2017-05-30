@@ -50,6 +50,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define GPIO_FET_SWITCH_CTRL	GPIO_TO_PIN(0, 7)
 #define GPIO_PHY_RESET		GPIO_TO_PIN(2, 5)
 #define GPIO_LCD_RESET		GPIO_TO_PIN(1, 21)
+#define GPIO_REVISION0		GPIO_TO_PIN(3, 0)
+#define GPIO_REVISION1		GPIO_TO_PIN(3, 1)
 
 static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
 
@@ -858,12 +860,18 @@ int board_eth_init(bd_t *bis)
 #ifndef CONFIG_SPL_BUILD
 #define CMD 0x00
 #define DAT 0x01
+#define END 0x02
 
-static const struct {
+#define CORDIAL_REV1	3
+#define CORDIAL_REV2	2
+
+typedef struct {
     uint8_t type;
         uint8_t cmd_or_data;
     uint16_t delay;
-} cordial_init_seq[] = {
+} cordial_init_seq_t;
+
+static const cordial_init_seq_t cordial_init_sequence_rev1[] = {
     {CMD, 0xFF, 0}, 
         {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x01, 0},
     {CMD, 0xFF, 0}, 
@@ -1091,7 +1099,250 @@ static const struct {
 
     {CMD, 0x11, 480}, /* Exit Sleep Mode */
     {CMD, 0x29, 40}, /* Set Display On */
+    {END}
+};
 
+static const cordial_init_seq_t cordial_init_sequence_rev2[] = {
+    {CMD, 0xFF, 0},
+        {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x00, 0},
+    {CMD, 0xFF, 0},
+        {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x01, 0},
+    {CMD, 0x08, 0},
+        {DAT, 0x10, 0},
+    {CMD, 0x21, 0},
+        {DAT, 0x03, 0},
+    {CMD, 0x30, 0},
+        {DAT, 0x02, 0},
+    {CMD, 0x31, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x60, 0},
+        {DAT, 0x07, 0},
+    {CMD, 0x61, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0x62, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0x63, 0},
+        {DAT, 0x04, 0},
+    {CMD, 0x40, 0},
+        {DAT, 0x14, 0},
+    {CMD, 0x41, 0},
+        {DAT, 0x55, 0},
+    {CMD, 0x42, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x43, 0},
+        {DAT, 0x09, 0},
+    {CMD, 0x44, 0},
+        {DAT, 0x0C, 0},
+    {CMD, 0x45, 0},
+        {DAT, 0x14, 0},
+    {CMD, 0x50, 0},
+        {DAT, 0x50, 0},
+    {CMD, 0x51, 0},
+        {DAT, 0x50, 0},
+    {CMD, 0x52, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x53, 0},
+        {DAT, 0x42, 0},
+    {CMD, 0xA0, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0xA1, 0},
+        {DAT, 0x09, 0},
+    {CMD, 0xA2, 0},
+        {DAT, 0x0C, 0},
+    {CMD, 0xA3, 0},
+        {DAT, 0x0F, 0},
+    {CMD, 0xA4, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0xA5, 0},
+        {DAT, 0x09, 0},
+    {CMD, 0xA6, 0},
+        {DAT, 0x07, 0},
+    {CMD, 0xA7, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0xA8, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0xA9, 0},
+        {DAT, 0x09, 0},
+    {CMD, 0xAA, 0},
+        {DAT, 0x11, 0},
+    {CMD, 0xAB, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0xAC, 0},
+        {DAT, 0x0E, 0},
+    {CMD, 0xAD, 0},
+        {DAT, 0x19, 0},
+    {CMD, 0xAE, 0},
+        {DAT, 0x0C, 0},
+    {CMD, 0xAF, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0xC0, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0xC1, 0},
+        {DAT, 0x09, 0},
+    {CMD, 0xC2, 0},
+        {DAT, 0x0C, 0},
+    {CMD, 0xC3, 0},
+        {DAT, 0x0F, 0},
+    {CMD, 0xC4, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0xC5, 0},
+        {DAT, 0x09, 0},
+    {CMD, 0xC6, 0},
+        {DAT, 0x07, 0},
+    {CMD, 0xC7, 0},
+        {DAT, 0x16, 0},
+    {CMD, 0xC8, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0xC9, 0},
+        {DAT, 0x09, 0},
+    {CMD, 0xCA, 0},
+        {DAT, 0x11, 0},
+    {CMD, 0xCB, 0},
+        {DAT, 0x06, 0},
+    {CMD, 0xCC, 0},
+        {DAT, 0x0E, 0},
+    {CMD, 0xCD, 0},
+        {DAT, 0x19, 0},
+    {CMD, 0xCE, 0},
+        {DAT, 0x0C, 0},
+    {CMD, 0xCF, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0xFF, 0},
+        {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x07, 0},
+    {CMD, 0x17, 0},
+        {DAT, 0x32, 20},  /* stops here mysteriously*/
+    {CMD, 0x06, 0},
+        {DAT, 0x13, 20},
+    {CMD, 0x02, 0},
+        {DAT, 0x77, 20},
+    {CMD, 0x18, 0},
+        {DAT, 0x1D, 20},
+    {CMD, 0xE1, 0},
+        {DAT, 0x79, 20},
+    {CMD, 0xFF, 0},
+        {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x06, 0},
+    {CMD, 0x00, 0},
+        {DAT, 0xA0, 0},
+    {CMD, 0x01, 0},
+        {DAT, 0x05, 0},
+    {CMD, 0x02, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x03, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x04, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x05, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x06, 0},
+        {DAT, 0x88, 0},
+    {CMD, 0x07, 0},
+        {DAT, 0x04, 0},
+    {CMD, 0x08, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x09, 0},
+        {DAT, 0x90, 0},
+    {CMD, 0x0A, 0},
+        {DAT, 0x04, 0},
+    {CMD, 0x0B, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x0C, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x0D, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x0E, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x0F, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x10, 0},
+        {DAT, 0x55, 0},
+    {CMD, 0x11, 0},
+        {DAT, 0x50, 0},
+    {CMD, 0x12, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x13, 0},
+        {DAT, 0x85, 0},
+    {CMD, 0x14, 0},
+        {DAT, 0x85, 0},
+    {CMD, 0x15, 0},
+        {DAT, 0xC0, 0},
+    {CMD, 0x16, 0},
+        {DAT, 0x0B, 0},
+    {CMD, 0x17, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x18, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x19, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x1A, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x1B, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x1C, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x1D, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x20, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x21, 0},
+        {DAT, 0x23, 0},
+    {CMD, 0x22, 0},
+        {DAT, 0x45, 0},
+    {CMD, 0x23, 0},
+        {DAT, 0x67, 0},
+    {CMD, 0x24, 0},
+        {DAT, 0x01, 0},
+    {CMD, 0x25, 0},
+        {DAT, 0x23, 0},
+    {CMD, 0x26, 0},
+        {DAT, 0x45, 0},
+    {CMD, 0x27, 0},
+        {DAT, 0x67, 0},
+    {CMD, 0x30, 0},
+        {DAT, 0x02, 0},
+    {CMD, 0x31, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x32, 0},
+        {DAT, 0x11, 0},
+    {CMD, 0x33, 0},
+        {DAT, 0xAA, 0},
+    {CMD, 0x34, 0},
+        {DAT, 0xBB, 0},
+    {CMD, 0x35, 0},
+        {DAT, 0x66, 0},
+    {CMD, 0x36, 0},
+        {DAT, 0x00, 0},
+    {CMD, 0x37, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x38, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x39, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x3A, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x3B, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x3C, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x3D, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x3E, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x3F, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x40, 0},
+        {DAT, 0x22, 0},
+    {CMD, 0x52, 0},
+        {DAT, 0x12, 0},
+    {CMD, 0x53, 0},
+        {DAT, 0x12, 0},
+    {CMD, 0xFF, 0},
+        {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x00, 0},
+    {CMD, 0x3A, 0},
+        {DAT, 0x70, 0},
+
+    {CMD, 0x11, 120}, /* Exit Sleep Mode */
+    {CMD, 0x29, 120}, /* Set Display On */
+    {END}
 };
 
 vidinfo_t	panel_info = {
@@ -1178,12 +1429,32 @@ static int cordial_spi_send(struct spi_slave *slave, uint8_t type,
 void lcd_enable(void)
 {
 	struct spi_slave *slave;
-	int i;
+	cordial_init_seq_t const *cordial_init_seq;
+
+	/* Read GPIO to determine which LCD is attached */
+	gpio_request(GPIO_REVISION0, "lcd_rev_0");
+	gpio_request(GPIO_REVISION1, "lcd_rev_1");
+	gpio_direction_input(GPIO_REVISION0);
+	gpio_direction_input(GPIO_REVISION1);
 
 	/* Take LCD out of reset */
 	gpio_request(GPIO_LCD_RESET, "lcd_reset");
 	gpio_direction_output(GPIO_LCD_RESET, 0);
 	mdelay(100);
+
+	/* Read GPIO now that a mdelay has occurred (for the reset) */
+	switch ((gpio_get_value(GPIO_REVISION1) ? 2 : 0) |
+		(gpio_get_value(GPIO_REVISION0) ? 1 : 0)) {
+	case CORDIAL_REV1:
+		cordial_init_seq = cordial_init_sequence_rev1;
+		break;
+	case CORDIAL_REV2:
+	default: /* error? */
+		cordial_init_seq = cordial_init_sequence_rev2;
+		break;
+	}
+
+	/* Take the LCD out of reset */
 	gpio_direction_output(GPIO_LCD_RESET, 1);
 
 	/* Get SPI slave for all transfers */
@@ -1203,11 +1474,12 @@ void lcd_enable(void)
 		goto done;
 
 	/* Send Cordial SPI initialization sequence */
-	for (i=0; i<sizeof(cordial_init_seq)/sizeof(cordial_init_seq[0]); i++) {
-		cordial_spi_send(slave, cordial_init_seq[i].type,
-				 cordial_init_seq[i].cmd_or_data);
-		if (cordial_init_seq[i].delay > 0)
-		    mdelay(cordial_init_seq[i].delay);
+	while (cordial_init_seq->type != END) {
+		cordial_spi_send(slave, cordial_init_seq->type,
+				 cordial_init_seq->cmd_or_data);
+		if (cordial_init_seq->delay > 0)
+		    mdelay(cordial_init_seq->delay);
+		cordial_init_seq++;
 	}
 
 	spi_release_bus(slave);
