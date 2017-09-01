@@ -1534,6 +1534,8 @@ void lcd_enable(void)
 
 	rev = get_cordial_rev();
 
+	rev = CORDIAL_REV2;
+
 	switch (rev) {
 	case CORDIAL_REV1:
 		cordial_init_seq = cordial_init_sequence_rev1;
