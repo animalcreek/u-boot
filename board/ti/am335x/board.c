@@ -50,11 +50,49 @@ DECLARE_GLOBAL_DATA_PTR;
 #define GPIO_FET_SWITCH_CTRL	GPIO_TO_PIN(0, 7)
 #define GPIO_PHY_RESET		GPIO_TO_PIN(2, 5)
 #define GPIO_LCD_RESET		GPIO_TO_PIN(1, 21)
-#define GPIO_REVISION0		GPIO_TO_PIN(3, 0)
-#define GPIO_REVISION1		GPIO_TO_PIN(3, 1)
+#define GPIO_HW_REV0		GPIO_TO_PIN(1, 26)
+#define GPIO_HW_REV1		GPIO_TO_PIN(1, 27)
+#define GPIO_HW_REV2		GPIO_TO_PIN(1, 28)
+#define GPIO_HW_REV3		GPIO_TO_PIN(1, 29)
+#define GPIO_LCD_REV0		GPIO_TO_PIN(3, 0)
+#define GPIO_LCD_REV1		GPIO_TO_PIN(3, 1)
 
 static struct ctrl_dev *cdev = (struct ctrl_dev *)CTRL_DEVICE_BASE;
 
+struct gpio_map {
+	unsigned int	gpio;
+	char		*name;
+};
+
+static struct gpio_map hw_rev_gpios[] = {
+	{
+		.gpio	= GPIO_HW_REV0,
+		.name	= "hw_rev_0",
+	},
+	{
+		.gpio	= GPIO_HW_REV1,
+		.name	= "hw_rev_1",
+	},
+	{
+		.gpio	= GPIO_HW_REV2,
+		.name	= "hw_rev_2",
+	},
+	{
+		.gpio	= GPIO_HW_REV3,
+		.name	= "hw_rev_3",
+	},
+};
+
+static struct gpio_map lcd_rev_gpios[] = {
+	{
+		.gpio	= GPIO_LCD_REV0,
+		.name	= "lcd_rev_0",
+	},
+	{
+		.gpio	= GPIO_LCD_REV1,
+		.name	= "lcd_rev_1",
+	},
+};
 
 int do_set_kv3_serial(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
@@ -1426,30 +1464,84 @@ static int cordial_spi_send(struct spi_slave *slave, uint8_t type,
 	return ret;
 }
 
+static int get_rev(const struct gpio_map *gmp, size_t size, bool invert,
+		   unsigned int *revp)
+{
+	unsigned int i, rev = 0;
+	int ret;
+
+	for (i = 0; i < size; i++, gmp++) {
+		gpio_request(gmp->gpio, gmp->name);
+		gpio_direction_input(gmp->gpio);
+
+		ret = gpio_get_value(gmp->gpio);
+		if (ret < 0) {
+			printf("Error reading GPIO %d\n", gmp->gpio);
+			return -EIO;
+		}
+
+		gpio_free(gmp->gpio);
+
+		if ((ret && !invert) || (!ret && invert))
+			rev |= BIT(i);
+	}
+
+	*revp = rev;
+	return 0;
+}
+
+static unsigned int get_cordial_rev(void)
+{
+	unsigned int hw_rev, lcd_rev, rev;
+	int ret;
+
+	ret = get_rev(hw_rev_gpios, ARRAY_SIZE(hw_rev_gpios), true,
+		      &hw_rev);
+	if (ret)
+		hw_rev = UINT_MAX; /* Invalid value */
+
+	switch (hw_rev) {
+	case 3:
+	case 4:
+		rev = CORDIAL_REV1;
+		break;
+	case 5:
+		rev = CORDIAL_REV2;
+		break;
+	default:
+		ret = get_rev(lcd_rev_gpios, ARRAY_SIZE(lcd_rev_gpios), false,
+			      &lcd_rev);
+		if (ret)
+			lcd_rev = UINT_MAX; /* Invalid value */
+
+		rev = lcd_rev;
+	}
+
+	return rev;
+}
+
 void lcd_enable(void)
 {
 	struct spi_slave *slave;
 	cordial_init_seq_t const *cordial_init_seq;
-
-	/* Read GPIO to determine which LCD is attached */
-	gpio_request(GPIO_REVISION0, "lcd_rev_0");
-	gpio_request(GPIO_REVISION1, "lcd_rev_1");
-	gpio_direction_input(GPIO_REVISION0);
-	gpio_direction_input(GPIO_REVISION1);
+	unsigned int rev;
+	int ret;
 
 	/* Take LCD out of reset */
 	gpio_request(GPIO_LCD_RESET, "lcd_reset");
 	gpio_direction_output(GPIO_LCD_RESET, 0);
 	mdelay(100);
 
-	/* Read GPIO now that a mdelay has occurred (for the reset) */
-	switch ((gpio_get_value(GPIO_REVISION1) ? 2 : 0) |
-		(gpio_get_value(GPIO_REVISION0) ? 1 : 0)) {
+	rev = get_cordial_rev();
+
+	switch (rev) {
+	default:
+		printf("Invalid cordial revision %u, default to 1\n", rev);
+		/* FALLTHROUGH */
 	case CORDIAL_REV1:
 		cordial_init_seq = cordial_init_sequence_rev1;
 		break;
 	case CORDIAL_REV2:
-	default: /* error? */
 		cordial_init_seq = cordial_init_sequence_rev2;
 		break;
 	}
