@@ -862,8 +862,8 @@ int board_eth_init(bd_t *bis)
 #define DAT 0x01
 #define END 0x02
 
-#define CORDIAL_REV1	3
-#define CORDIAL_REV2	2
+#define CORDIAL_REV1	2
+#define CORDIAL_REV2	3
 
 typedef struct {
     uint8_t type;
@@ -871,7 +871,7 @@ typedef struct {
     uint16_t delay;
 } cordial_init_seq_t;
 
-static const cordial_init_seq_t cordial_init_sequence_rev1[] = {
+static const cordial_init_seq_t cordial_init_sequence_rev2[] = {
     {CMD, 0xFF, 0}, 
         {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x01, 0},
     {CMD, 0xFF, 0}, 
@@ -1102,7 +1102,7 @@ static const cordial_init_seq_t cordial_init_sequence_rev1[] = {
     {END}
 };
 
-static const cordial_init_seq_t cordial_init_sequence_rev2[] = {
+static const cordial_init_seq_t cordial_init_sequence_rev1[] = {
     {CMD, 0xFF, 0},
         {DAT, 0xFF, 0}, {DAT, 0x98, 0}, {DAT, 0x06, 0}, {DAT, 0x04, 0}, {DAT, 0x00, 0},
     {CMD, 0xFF, 0},
